@@ -2,9 +2,11 @@
   "name": "currying-javascript",
   "version": "1.0.0",
   "description": "Currying in Javascript. This repo contains the code used in the \"Curry\" JS Guild Talk",
-  "main": "index.js",
+  "main": "./build/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && node ./build/index.js",
+    "build": "tsc",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -24,5 +26,18 @@
   "bugs": {
     "url": "https://github.com/GerryLarios/currying-javascript/issues"
   },
-  "homepage": "https://github.com/GerryLarios/currying-javascript#readme"
+  "homepage": "https://github.com/GerryLarios/currying-javascript#readme",
+  "dependencies": {
+    "typescript": "^4.5.5"
+  },
+  "devDependencies": {
+    "@tango-io/eslint-config-tango-node": "^1.0.1",
+    "@types/jest": "^27.4.0",
+    "@typescript-eslint/eslint-plugin": "^5.11.0",
+    "@typescript-eslint/parser": "^5.11.0",
+    "eslint": "^8.9.0",
+    "eslint-config-prettier": "^8.3.0",
+    "jest": "^27.5.1",
+    "prettier": "^2.5.1"
+  }
 }
