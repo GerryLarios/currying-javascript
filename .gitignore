@@ -1,3 +1,7 @@
+# project
+build
+coverage
+
 # Logs
 logs
 *.log
