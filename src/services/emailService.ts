@@ -14,4 +14,5 @@ export const sendNotificationTo = curry(
 );
 
 export const requestToJoinFrom = (userEmail: string) => `${userEmail} wants to join!`;
+
 export const messageFrom = (userEmail: string) => `${userEmail} sent you a message!`;
