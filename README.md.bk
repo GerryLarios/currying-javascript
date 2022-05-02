@@ -101,7 +101,25 @@ const result = add2(7); // non function returned, this time is the result.
 result; // 18
 ```
 
+Now, let's know how it works on the first call.
+
+```javascript
+const curriedAdd = curry(add); // returns `$curry` function.
+```
+
 `curriedAdd` is `$curry` ready to receive `args` and check its length versus `add` function arity `fn.length`
+
+```javascript
+return function $curry(...args) {
+  return args.length < fn.length ? $curry.bind(null, ...args) : fn(...args);
+}
+```
+
+The following code call goes:
+
+```javascript
+const add1 = curriedAdd(5); // returns a function with the number 1 binded.
+```
 
 If the arguments passed are less than the original function arity, create a new function with the attached argument. In other words. `args.length` is less than `fn.length`, then return a new function with all the `...args` bonded to `$curry`.
 
@@ -109,13 +127,69 @@ If the arguments passed are less than the original function arity, create a new 
 * That is why the `$curry` function is not an anonymous function.
 * That is why we are using `bind`. The `bind()` function creates a new bound function that wraps the original function object, `$curry` with `args`. 
 
+The previous explanation translated into code would be like this:
+
+At this point:
+
+* `args.length` is equal to `1`.
+* `args` is equal to `[5]`.
+* `fn.length` is equal to `3`.
+
+```javascript
+//              ...args
+function $curry(...[5]) {
+// return args.length < fn.length ? $curry.bind(null, ...args) : fn(...args);
+  return 1 < 3 ? $curry.bind(null, ...[5]) : fn(...[5])
+}
+```
+
+Lets see the following code call:
+
+```javascript
+const add2 = add1(6);
+```
+
+At this point:
+
+* `args.length` is equal to `2`.
+* `args` is equal to `[5, 6]`.
+* `fn.length` is equal to `3`.
+
+```javascript
+//              ...args
+function $curry(...[5, 6]) {
+// return args.length < fn.length ? $curry.bind(null, ...args) : fn(...args);
+  return 2 < 3 ? $curry.bind(null, ...[5, 6]) : fn(...[5, 6])
+}
+```
+
+And the final code goes like this:
+
+```javascript
+const result = add2(7);
+```
+
+At this point:
+
+* `args.length` is equal to `3`.
+* `args` is equal to `[5, 6, 7]`.
+* `fn.length` is equal to `3`.
+
+```javascript
+//              ...args
+function $curry(...[5, 6, 7]) {
+// return args.length < fn.length ? $curry.bind(null, ...args) : fn(...args);
+  return 3 < 3 ? $curry.bind(null, ...[5, 6, 7]) : fn(...[5, 6, 7])
+}
+```
+
 At this moment, we fulfilled the the 3 arguments required to call the function, so we return `fn(...[5, 6, 7])` that means `result = fn(...[5, 6, 7]) = fn(x, y, z) = 18`.
 
 As we can see, curried functions have a built-in iterator behavior.
 
 ## Example: Email Setup
 
-As I mentioned before, using curry is useful when we create project setups, and in this example, we will use curry to generate an email setup and send emails.
+As I mentioned before, using curry is useful when we create project setups, and in this example, we will use curry to generate an email set up to send emails.
 
 ```javascript
 const emailSetup = curry(
@@ -123,7 +197,7 @@ const emailSetup = curry(
 );
 ```
 
-Now, we have an `emailSetup` curried function that takes three arguments. `config`, which serves as an example for a simple configuration, `template` that is the email template; and finally receives `to`, that is the email address that is going to receive the email.
+Now, we have an `emailSetup` curried function. In this example, the curried function takes three arguments. `config`, which serves as an example for a simple configuration, `template` that is the email template; and finally receives `to`, that is the email address that is going to receive the email.
 
 We have the following requirement:
 
@@ -143,11 +217,73 @@ const sendSetupEmailTo = emailServer('<a href="http://127.0.0.1">click here!</a>
 
 `sendSetupEmailTo` only needs an email address to send the email.
 
+Let's say we have the following requirement.
+
+*As an administrator, I would like to receive a notification when a user requests to join my organization.*
+
+We can curry our `emailSender` to receive different templates and emails like this.
+
 ```javascript
-const result = sendSetupEmailTo('gerardo.chavez@tango.io');
+const sendNotificationTo = curry(
+  (email, template) => emailServer(template)(email)
+);
+```
+
+At this moment we can take care of creating different templates:
+
+```javascript
+const requestToJoinFrom = (userEmail) => `${userEmail} wants to join!`;
+```
+
+And our function to send email would be like this:
+
+```javascript
+const sendNotificationToAdmin = sendNotificationTo('admin@test.com');
+
+sendNotificationToAdmin(
+  requestToJoinFrom('user@test.com')
+)
+```
+
+Let's take a look at another requirement.
+
+*As an administrator, I would like to receive a notification when a user sent me message.*
+
+We already have `sendNotificatioToAdmin` function, so we only need to take care of the template:
+
+```javascript
+const messageFrom = (userEmail) => `${userEmail} sent you a message!`;
+```
+
+So we finally can create the following function to send an email notification:
+
+```javascript
+sendNotificationToAdmin(
+  messageFrom('user@test.com')
+)
 ```
 
 Developing new features is easy now. We create declarative code that takes care of *what* needs to be done instead of *how*, and we void boiler plate code.
+
+These are how our functions look like, ready to be used in some endpoint or service:
+
+```javascript
+
+// As a user, I would like to receive an email when I sign up to set up an account to use the app.
+sendSetupEmailTo('gchavez@ucol.mx');
+
+
+// As an administrator, I would like to receive a notification when a user requests to join my organization.
+const sendNotificationToAdmin = sendNotificationTo('admin@ucol.mx');
+sendNotificationToAdmin(
+  requestToJoinFrom('gchavez@ucol.mx')
+);
+
+// As an administrator, I would like to receive a notification when a user sent me message.
+sendNotificationToAdmin(
+  messageFrom('gchavez@ucol.mx')
+);
+```
 
 We can even create generic higher functions to take care of most of the issues:
 
@@ -171,76 +307,6 @@ const map = curry(
 
 Note that primary arguments should be placed at the end to facilitate function composition, and arguments that are least likely to change should be placed left most to enable partially applied functions.
 
-## Libraries
-
-In Javascript, exists some libraries that already have curry out of the box.
-
-### Lodash
-
-Lodash makes JavaScript easier by taking the hassle out of working with arrays, numbers, objects, strings, etc.
-Lodash’s modular methods are great for iterating arrays and objects, manipulating values and composite functions.
-
-We need to install the Lodash library.
-
-```bash
-npm install lodash
-```
-
-The `_.curry` function turns a normal function into a curried one.
-
-```javascript
-const _ = require('lodash');
-
-function multiply(a, b, c) {
-  return a * b * c;
-}
-
-const curried = _.curry(multiply);
-
-const result = curried(5)(5)(5); // 125
-```
-### Ramda
-
-Ramda emphasizes a purer functional style. Immutability and side-effect free functions are at the heart of its design philosophy. This can help you get the job done with simple, elegant code.
-
-*Ramda functions are automatically curried.* This allows you to easily build up new functions from old ones simply by not supplying the final parameters.
-
-The parameters to Ramda functions are arranged to make it convenient for currying. The data to be operated on is generally supplied last.
-
-The last two points together make it very easy to build functions as sequences of simpler functions, each of which transforms the data and passes it along to the next. Ramda is designed to support this style of coding.
-
-We need to install the Ramda library.
-
-```bash
-npm install ramda
-```
-
-Let's see how the the automatic currying works.
-
-```javascript
-const R = require('ramda');
-
-const add = R.add(5); // create 'add' function.
-const result = add(6); // 11
-
-const divide = R.divide(100); // create 'divide' function
-const res = divide(20); // 5
-```
-
-Ramda has a curry function that returns a curried equivalent of the provided function:
-
-```javascript
-const R = require('ramda');
-
-function multiply(a, b, c) {
-  return a * b * c;
-}
-
-const curried = R.curry(multiply);
-
-const result = curried(5)(5)(5); // 125
-```
-
 ## Conclusions
 
 Curry is a taste of functional programming techniques that can be useful to remove code duplication, develop features faster by creating reusable code, etc. We can make new, valuable functions on the fly simply by passing in a few arguments.
@@ -254,5 +320,3 @@ Curry is a taste of functional programming techniques that can be useful to remo
 * https://zetcode.com/javascript/currying/
 * https://stackify.com/javascript-currying-vs-partial-application/
 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_objects/Function/bind
-* https://lodash.com/
-* https://ramdajs.com/
